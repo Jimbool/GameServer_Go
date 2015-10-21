@@ -1,0 +1,99 @@
+一、命名规范
+1、在GO语言里不推荐使用下划线方式，而推荐使用驼峰命名法(有少数例外情况)；
+2、const变量名称全部大写，为了便于阅读，在各个单词之间以_分隔（与第1条相悖，但主要是为了方便阅读，故这条是第1条的例外情况）；如：
+const HEADER_LENGTH = 4
+3、var定义的全局变量，按照惯例首字母应大写，如：
+var ByterOrder = binary.LittleEndian
+但如果不想让外部访问，则以小写字母开头
+4、对于需要检测数据类型的变量，可以以_分隔，并将类型加到后面，以便于为变量取名（与第1条相悖，但主要是为了方便阅读，故这条是第1条的例外情况），如：
+// 解析LOGIN_KEY
+loginKey, ok := config["LOGIN_KEY"]
+if !ok {
+	panic(errors.New("不存在名为LOGIN_KEY的配置或配置为空"))
+}
+loginKey_string, ok := loginKey.(string)
+if !ok {
+	panic(errors.New("LOGIN_KEY必须是string型"))
+}
+5、对于struct中定义的属性，如果是值类型，则应以小写字母开头；如若需要外部访问，则提供访问的方法。
+如若是Get方法，则与属性同名，但以大写字母开头；
+如若是Set方法，则命名为Set+属性名称（以大写字母开头）
+如：
+type Player struct {
+	id string
+	name string
+}
+
+type (p *Player) Id() string {
+	return p.id
+}
+
+type (p *Player) SetId(id string){
+	p.id = id
+}
+
+但如果是引用类型，则可以直接以大写字母开头，因为对于引用类型而言，提供GET/SET方法与直接以大写字母开头的作用是一样的。如：Slice、Map、Channel、自定义的Struct类型。
+
+二、注释规范
+1、包注释：由于一个包中可能包含许多文件，而对每一个文件都写上包注释没有意义，所以只需要对其中一个文件写包注释即可；但是到底应该对哪个文件写注释呢，建议在每个包下面建一个文件：doc.go，其中的内容仅仅为包的注释，如下所示：
+/*
+定义响应数据对象
+服务器响应客户端的请求最终都是将一个ResponseObject对象进行JSON序列化，然后发送给客户端
+而每一个ResponseObject对象必定包含一个ResultStatus对象的标识，以标识本次响应的状态
+*/
+package responseDataObject
+但如果一个包内只有一个文件，则可以不用单独建doc.go，而将注释写到文件顶部
+
+2、类型注释：为了便于理解，所以必须对type关键字定义的类型进行注释，如：
+// 定义客户端对象，以实现对客户端连接的封装
+type Client struct {
+	// 公共属性
+	// 唯一标识
+	Id int32
+
+	// 客户端连接对象
+	Conn net.Conn
+
+	// 私有属性，内部使用
+	// 接收到的消息内容
+	content []byte
+
+	// 上次活跃时间
+	activeTime time.Time
+}
+
+3、方法注释：对外公开的方法（也就是首字母大写的方法）必须要注释，而内部方法（也就是首字母小写的方法）可以不进行注释。注释的格式如下：
+// 获取指定响应类型的响应对象
+// responseObj：响应对象
+// rs：响应类型对象
+// 返回值：
+// 响应对象
+func getResultStatusResponseObj(responseObj responseDataObject.ResponseObject, rs responseDataObject.ResultStatus) responseDataObject.ResponseObject {
+	responseObj.Code = rs
+	responseObj.Message = rs.String()
+
+	return responseObj
+}
+
+
+三、包引用规范
+1、使用绝对路径来引用所有的包（无论是外部包，或者是内部包）
+2、当引用外部包时，先使用go get 包的url来下载包到本地
+
+
+五、项目结构规范
+1、由于GO语言的项目管理是以GOPATH为基础的，所以每个开发人员必须先设置好自己的GOPATH路径；
+2、不推荐每个项目可以设置自己的GOPATH，而是只使用一个GOPATH。原因是：如果各个项目的组织结构类似，那么在import包的时候，会沿着GOPATH里面设定的项目从左往右查找，当找到一个即返回了；这样的后果是后面的项目永远没有机会被找到，从而寻到错误；
+3、在GOPATH之下，需要建立src目录，在之下就是项目目录了，推荐个人项目以github.com/UserName为上级目录，而公司项目则以公司域名为上级目录，如：
+个人项目：
+GOPATH
+- - - -src
+	- - - -github.com
+				- - - -Jordanzuo
+							- - - -chatServer
+							- - - -chatClient
+公司项目：
+- - - -src
+	- - - -moqikaka.com
+				- - - -chatServer
+				- - - -chatClient
