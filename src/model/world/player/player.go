@@ -16,15 +16,23 @@ type Player struct {
 
 	// 服务器Id
 	serverId int
+
+	// 游戏版本号
+	gameVersionId int
+
+	// 资源版本号
+	resourceVersionId int
 }
 
-func New(id, name string, clientId int32, partnerId, serverId int) *Player {
+func New(id, name string, clientId int32, partnerId, serverId, gameVersionId, resourceVersionId int) *Player {
 	return &Player{
-		id:        id,
-		name:      name,
-		clientId:  clientId,
-		partnerId: partnerId,
-		serverId:  serverId,
+		id:                id,
+		name:              name,
+		clientId:          clientId,
+		partnerId:         partnerId,
+		serverId:          serverId,
+		gameVersionId:     gameVersionId,
+		resourceVersionId: resourceVersionId,
 	}
 }
 
@@ -54,4 +62,12 @@ func (p *Player) PartnerId() int {
 
 func (p *Player) ServerId() int {
 	return p.serverId
+}
+
+func (p *Player) GameVersionId() int {
+	return p.gameVersionId
+}
+
+func (p *Player) ResourceVersionId() int {
+	return p.resourceVersionId
 }

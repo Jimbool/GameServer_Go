@@ -23,10 +23,30 @@ type PlayerBLL int8
 // clientObj：客户端对象
 // partnerId：合作商Id
 // serverId：服务器Id
+// gameVersionId：游戏版本Id
+// resourceVersionId：资源版本Id
 // name：玩家名称
 // sign：登陆签名
-func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId int, name, sign string) rpc.ResponseObject {
+func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, gameVersionId, resourceVersionId int,
+	name, sign string) rpc.ResponseObject {
 	responseObj := rpc.GetInitResponseObj()
+
+	// 判断合作商、服务器是否存在
+	if manageUtil.IfServerExists(partnerId, serverId) == false {
+		return resultStatus.GetResponseObject(responseObj, resultStatus.ServerNotExists)
+	}
+
+	// 检测是否有游戏版本更新
+	if gameVersionUrl, ok := manageUtil.IfHasNewGameVersion(partnerId, serverId, gameVersionId); ok {
+		responseObj.Data = gameVersionUrl
+		return resultStatus.GetResponseObject(responseObj, resultStatus.NewGameVersion)
+	}
+
+	// 检测是否有资源版本更新
+	if resourceVersionList, ok := manageUtil.IfHasNewResource(partnerId, gameVersionId, resourceVersionId); ok {
+		responseObj.Data = resourceVersionList
+		return resultStatus.GetResponseObject(responseObj, resultStatus.NewResourceVersion)
+	}
 
 	// 验证签名是否正确
 	if sign != securityUtil.Md5String(fmt.Sprintf("%s-%s", name, manageUtil.GetLoginKey(partnerId)), false) {
@@ -51,7 +71,7 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId i
 		// 更新玩家对象的ClientId
 		playerObj.SetClientId(clientObj.Id())
 	} else {
-		playerObj = player.New(stringUtil.GetNewGUID(), name, clientObj.Id(), partnerId, serverId)
+		playerObj = player.New(stringUtil.GetNewGUID(), name, clientObj.Id(), partnerId, serverId, gameVersionId, resourceVersionId)
 
 		// 注册玩家名称和Id
 		playerNameBLL.RegisterNameAndId(playerName.New(name, playerObj.Id()))
