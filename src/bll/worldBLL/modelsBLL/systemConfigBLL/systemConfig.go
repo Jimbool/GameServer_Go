@@ -150,7 +150,7 @@ func init() {
 
 		// 构造对象并添加到列表中
 		systemConfigItem := systemConfig.New(configKey, configValue)
-		systemConfigList[systemConfigItem.ConfigKey] = systemConfigItem
+		systemConfigList[systemConfigItem.ConfigKey()] = systemConfigItem
 	}
 
 	// 检测数据
@@ -170,7 +170,7 @@ func check() {
 	if value, ok = systemConfigList[systemConfigKey.CheckExpiredInterval]; !ok {
 		initError.RegisterInitError(errors.New(fmt.Sprintf("没有找到%s的配置", systemConfigKey.CheckExpiredInterval)))
 	} else {
-		if checkExpiredInterval_int, err := strconv.Atoi(value.ConfigValue); err != nil {
+		if checkExpiredInterval_int, err := strconv.Atoi(value.ConfigValue()); err != nil {
 			initError.RegisterInitError(err)
 		} else {
 			CheckExpiredInterval = time.Duration(checkExpiredInterval_int)
@@ -180,7 +180,7 @@ func check() {
 	if value, ok = systemConfigList[systemConfigKey.ClientExpiredSeconds]; !ok {
 		initError.RegisterInitError(errors.New(fmt.Sprintf("没有找到%s的配置", systemConfigKey.ClientExpiredSeconds)))
 	} else {
-		if clientExpiredSeconds_int, err := strconv.Atoi(value.ConfigValue); err != nil {
+		if clientExpiredSeconds_int, err := strconv.Atoi(value.ConfigValue()); err != nil {
 			initError.RegisterInitError(err)
 		} else {
 			ClientExpiredSeconds = time.Duration(clientExpiredSeconds_int)

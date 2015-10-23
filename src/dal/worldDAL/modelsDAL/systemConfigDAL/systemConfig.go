@@ -10,9 +10,6 @@ var (
 )
 
 func GetList() (*sql.Rows, error) {
-	// for test
-	return nil, nil
-
 	db := dal.GameModelDB()
 	rows, err := db.Query(getListCommand)
 

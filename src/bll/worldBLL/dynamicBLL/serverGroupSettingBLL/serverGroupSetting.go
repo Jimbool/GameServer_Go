@@ -30,9 +30,7 @@ func init() {
 	for rows.Next() {
 		var serverGroupId int
 		var manageCenterUrl string
-		var checkExpiredInterval int
-		var clientExpireSeconds int
-		err := rows.Scan(&serverGroupId, &manageCenterUrl, &checkExpiredInterval, &clientExpireSeconds)
+		err := rows.Scan(&serverGroupId, &manageCenterUrl)
 		if err != nil {
 			initError.RegisterInitError(err)
 			continue
@@ -41,11 +39,6 @@ func init() {
 		// 构造对象
 		serverGroupSettingConfig = serverGroupSetting.New(serverGroupId, manageCenterUrl)
 	}
-}
-
-// for test
-func init() {
-	serverGroupSettingConfig = serverGroupSetting.New(config.ServerGroupId, "http://managecentertest.qyc.moqikaka.com/API/ServerActivate.ashx")
 }
 
 // 获取服务器组设置配置对象

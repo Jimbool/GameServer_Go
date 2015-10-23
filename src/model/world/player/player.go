@@ -8,31 +8,23 @@ type Player struct {
 	// 玩家名称
 	name string
 
-	// 玩家对应的客户端Id
-	clientId int32
-
 	// 合作商Id
 	partnerId int
 
 	// 服务器Id
 	serverId int
 
-	// 游戏版本号
-	gameVersionId int
-
-	// 资源版本号
-	resourceVersionId int
+	// 玩家对应的客户端Id
+	clientId int32
 }
 
-func New(id, name string, clientId int32, partnerId, serverId, gameVersionId, resourceVersionId int) *Player {
+func New(id, name string, partnerId, serverId int, clientId int32) *Player {
 	return &Player{
-		id:                id,
-		name:              name,
-		clientId:          clientId,
-		partnerId:         partnerId,
-		serverId:          serverId,
-		gameVersionId:     gameVersionId,
-		resourceVersionId: resourceVersionId,
+		id:        id,
+		name:      name,
+		clientId:  clientId,
+		partnerId: partnerId,
+		serverId:  serverId,
 	}
 }
 
@@ -48,26 +40,20 @@ func (p *Player) SetName(name string) {
 	p.name = name
 }
 
+// 获取合作商Id
+func (p *Player) PartnerId() int {
+	return p.partnerId
+}
+
+// 获取服务器Id
+func (p *Player) ServerId() int {
+	return p.serverId
+}
+
 func (p Player) ClientId() int32 {
 	return p.clientId
 }
 
 func (p *Player) SetClientId(clientId int32) {
 	p.clientId = clientId
-}
-
-func (p *Player) PartnerId() int {
-	return p.partnerId
-}
-
-func (p *Player) ServerId() int {
-	return p.serverId
-}
-
-func (p *Player) GameVersionId() int {
-	return p.gameVersionId
-}
-
-func (p *Player) ResourceVersionId() int {
-	return p.resourceVersionId
 }

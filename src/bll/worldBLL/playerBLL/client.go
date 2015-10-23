@@ -7,10 +7,9 @@ import (
 	"github.com/Jordanzuo/GameServer_Go/src/model/text/gameProperty"
 	"github.com/Jordanzuo/GameServer_Go/src/model/world/global/playerName"
 	"github.com/Jordanzuo/GameServer_Go/src/model/world/player"
-	"github.com/Jordanzuo/GameServer_Go/src/resultStatus"
-	rpc "github.com/Jordanzuo/RPCServer_Go"
+	"github.com/Jordanzuo/GameServer_Go/src/rpc"
 	"github.com/Jordanzuo/goutil/securityUtil"
-	"github.com/Jordanzuo/goutil/stringUtil"
+	_ "github.com/Jordanzuo/goutil/stringUtil"
 )
 
 func init() {
@@ -31,39 +30,42 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, 
 	name, sign string) rpc.ResponseObject {
 	responseObj := rpc.GetInitResponseObj()
 
+	fmt.Println("param:", partnerId, serverId, gameVersionId, resourceVersionId, name)
+
 	// 判断合作商、服务器是否存在
 	if manageUtil.IfServerExists(partnerId, serverId) == false {
-		return resultStatus.GetResponseObject(responseObj, resultStatus.ServerNotExists)
+		return rpc.GetResultStatusResponseObj(responseObj, rpc.ServerNotExists)
 	}
 
 	// 检测是否有游戏版本更新
 	if gameVersionUrl, ok := manageUtil.IfHasNewGameVersion(partnerId, serverId, gameVersionId); ok {
 		responseObj.Data = gameVersionUrl
-		return resultStatus.GetResponseObject(responseObj, resultStatus.NewGameVersion)
+		return rpc.GetResultStatusResponseObj(responseObj, rpc.NewGameVersion)
 	}
 
 	// 检测是否有资源版本更新
 	if resourceVersionList, ok := manageUtil.IfHasNewResource(partnerId, gameVersionId, resourceVersionId); ok {
 		responseObj.Data = resourceVersionList
-		return resultStatus.GetResponseObject(responseObj, resultStatus.NewResourceVersion)
+		return rpc.GetResultStatusResponseObj(responseObj, rpc.NewResourceVersion)
 	}
 
 	// 验证签名是否正确
 	if sign != securityUtil.Md5String(fmt.Sprintf("%s-%s", name, manageUtil.GetLoginKey(partnerId)), false) {
-		return resultStatus.GetResponseObject(responseObj, resultStatus.SignError)
+		return rpc.GetResultStatusResponseObj(responseObj, rpc.SignError)
 	}
 
 	// 判断玩家是否在缓存中已经存在
-	var playerObj rpc.IPlayer
+	var playerObj *player.Player
 	var ok bool
-	if playerObj, ok = GetPlayerByName(name); ok {
+	if playerObj, ok = GetPlayerByName(clientObj, name, partnerId, serverId); ok {
 		// 判断是否重复登陆
-		if oldClientObj, ok := rpc.GetClientById(playerObj.ClientId()); ok {
-			// 先发送被路易下去的信息
-			rpc.ResponseResult(oldClientObj, nil, resultStatus.GetResponseObject(responseObj, resultStatus.LoginAgain))
-
-			// 如果不是同一个客户端，则玩家登出，客户端退出
+		if oldClientObj, ok := rpc.GetClientByPlayerId(playerObj.Id()); ok {
+			fmt.Println("找到客户端")
+			// 如果不是同一个客户端，则先发送重复登陆的信息，然后玩家登出，客户端退出
 			if clientObj != oldClientObj {
+				// 先发送被路易下去的信息
+				PushDataToClient(oldClientObj, rpc.GetResultStatusResponseObj(responseObj, rpc.LoginAgain))
+
 				oldClientObj.LogoutAndQuit()
 			}
 		}
@@ -71,38 +73,28 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, 
 		// 更新玩家对象的ClientId
 		playerObj.SetClientId(clientObj.Id())
 	} else {
-		playerObj = player.New(stringUtil.GetNewGUID(), name, clientObj.Id(), partnerId, serverId, gameVersionId, resourceVersionId)
+		// todo 创建新玩家
+		// playerObj = player.New(stringUtil.GetNewGUID(), name, partnerId, serverId, clientObj.Id())
 
-		// 注册玩家名称和Id
-		playerNameBLL.RegisterNameAndId(playerName.New(name, playerObj.Id()))
+		// // 注册玩家名称和Id
+		// playerNameBLL.RegisterNameAndId(playerName.New(name, playerObj.Id()))
+		return rpc.GetResultStatusResponseObj(responseObj, rpc.PlayerNotFound)
 	}
 
-	// 将玩家添加到列表中
-	rpc.RegisterPlayer(rpc.NewClientPlayerPair(clientObj, playerObj))
-
-	// 将playerObj转化为Player对象
-	newPlayerObj := GetPlayerFromIPlayer(playerObj)
+	// 玩家上线
+	clientObj.PlayerLogin(playerObj.Id(), partnerId, serverId, gameVersionId, resourceVersionId)
 
 	// 组装返回值
-	data := make(map[string]interface{})
-	data[gameProperty.Id] = newPlayerObj.Id()
-	data[gameProperty.Name] = newPlayerObj.Name()
-	data[gameProperty.PartnerId] = newPlayerObj.PartnerId()
-	data[gameProperty.ServerId] = newPlayerObj.ServerId()
-
-	responseObj.Data = data
+	responseObj.Data = assembleToClient(playerObj)
 
 	return responseObj
 }
 
 // 修改玩家名称
-// iplayer：玩家对象
+// playerObj：玩家对象
 // newName：新名称
-func (playerBLL *PlayerBLL) C_AlterName(iplayer rpc.IPlayer, newName string) rpc.ResponseObject {
+func (playerBLL *PlayerBLL) C_AlterName(playerObj *player.Player, newName string) rpc.ResponseObject {
 	responseObj := rpc.GetInitResponseObj()
-
-	// 获取具体的玩家对象
-	playerObj := GetPlayerFromIPlayer(iplayer)
 
 	// 判断名字是否未改变
 	if playerObj.Name() == newName {
@@ -111,7 +103,7 @@ func (playerBLL *PlayerBLL) C_AlterName(iplayer rpc.IPlayer, newName string) rpc
 
 	// 判断新名称是否存在
 	if _, exists := playerNameBLL.GetIdByName(newName); exists {
-		return resultStatus.GetResponseObject(responseObj, resultStatus.NameExists)
+		return rpc.GetResultStatusResponseObj(responseObj, rpc.NameExists)
 	}
 
 	// 获取旧名称
@@ -124,21 +116,21 @@ func (playerBLL *PlayerBLL) C_AlterName(iplayer rpc.IPlayer, newName string) rpc
 	playerNameBLL.UnRegisterNameAndId(playerName.New(oldName, playerObj.Id()))
 	playerNameBLL.RegisterNameAndId(playerName.New(playerObj.Name(), playerObj.Id()))
 
-	// 推送信息
-	if clientObj, ok := rpc.GetClientByPlayer(playerObj); ok {
-		targetResponseObj := rpc.GetInitResponseObj()
+	// 推送信息begin
 
-		// 组装data
-		playerInfo := make(map[string]interface{})
-		playerInfo[gameProperty.Name] = playerObj.Name()
+	// 组装data
+	playerInfo := make(map[string]interface{})
+	playerInfo[gameProperty.Name] = playerObj.Name()
 
-		data := make(map[string]interface{})
-		data[gameProperty.PlayerInfo] = playerInfo
+	data := make(map[string]interface{})
+	data[gameProperty.PlayerInfo] = playerInfo
 
-		targetResponseObj.Data = data
+	pushResponseObj := rpc.GetInitResponseObj()
+	pushResponseObj.Data = data
 
-		rpc.ResponseResult(clientObj, nil, targetResponseObj)
-	}
+	PushDataToPlayer(playerObj, pushResponseObj)
+
+	// 推送信息end
 
 	return responseObj
 }

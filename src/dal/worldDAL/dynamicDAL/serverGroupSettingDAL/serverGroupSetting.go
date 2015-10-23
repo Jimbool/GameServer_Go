@@ -13,9 +13,6 @@ var (
 )
 
 func GetList(serverGroupId int) (*sql.Rows, error) {
-	// for test
-	return nil, nil
-
 	db := dal.GameModelDB()
 	rows, err := db.Query(getListCommand, serverGroupId)
 

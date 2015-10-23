@@ -55,6 +55,7 @@ func openConnections(connectionString string) *sql.DB {
 
 	db.SetMaxOpenConns(maxOpenCons)
 	db.SetMaxIdleConns(maxIdleConns)
+	db.Ping()
 
 	return db
 }

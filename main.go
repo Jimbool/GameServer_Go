@@ -6,8 +6,9 @@ import (
 	"github.com/Jordanzuo/GameServerUtil_Go/manageUtil"
 	"github.com/Jordanzuo/GameServer_Go/src/bll/worldBLL/dynamicBLL/serverGroupSettingBLL"
 	"github.com/Jordanzuo/GameServer_Go/src/bll/worldBLL/modelsBLL/systemConfigBLL"
+	"github.com/Jordanzuo/GameServer_Go/src/bll/worldBLL/playerBLL"
 	"github.com/Jordanzuo/GameServer_Go/src/initError"
-	rpc "github.com/Jordanzuo/RPCServer_Go"
+	"github.com/Jordanzuo/GameServer_Go/src/rpc"
 	"github.com/Jordanzuo/goutil/logUtil"
 	"os"
 	"os/exec"
@@ -71,14 +72,13 @@ func main() {
 
 	// 检查初始化错误
 	errs := initError.GetInitErrorList()
-	// if len(errs) > 0 {
-	// 	fmt.Println("初始化游戏世界错误，错误信息为：")
-	// 	for index, err := range errs {
-	// 		fmt.Println(index+1, ":", err)
-	// 	}
-	// 	os.Exit(0)
-	// }
-	_ = errs
+	if len(errs) > 0 {
+		fmt.Println("初始化游戏世界错误，错误信息为：")
+		for index, err := range errs {
+			fmt.Println(index+1, ":", err)
+		}
+		os.Exit(0)
+	}
 
 	// 激活服务器
 	err := manageUtil.ActivateServer(serverGroupSettingBLL.GetServerGroupSettingConfig().ManageCenterUrl(), serverGroupSettingBLL.GetServerGroupSettingConfig().ServerGroupId())
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	// 设置RPC服务器所需参数
-	rpc.SetRPCParam(manageUtil.GetServerUrl(), systemConfigBLL.CheckExpiredInterval, systemConfigBLL.ClientExpiredSeconds)
+	rpc.SetRPCParam(manageUtil.GetServerUrl(), systemConfigBLL.CheckExpiredInterval, systemConfigBLL.ClientExpiredSeconds, playerBLL.GetPlayerById)
 
 	// 启动Socket服务器
 	go rpc.StartServer(&wg)
