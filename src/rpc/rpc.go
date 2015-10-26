@@ -133,7 +133,7 @@ func GetClientById(id int32) (*Client, bool) {
 // 是否存在客户端对象
 func GetClientByPlayerId(playerId string) (*Client, bool) {
 	for _, clientObj := range clientList {
-		if clientObj.playerId == playerId {
+		if clientObj.PlayerId() == playerId {
 			return clientObj, true
 		}
 	}

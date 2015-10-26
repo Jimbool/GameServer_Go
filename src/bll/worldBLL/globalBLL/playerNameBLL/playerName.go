@@ -22,7 +22,9 @@ var (
 func init() {
 	// 启动处理增加、删除玩家名称channel的gorountine
 	go handleChannel()
+}
 
+func init() {
 	// 加载数据
 	rows, err := playerNameDAL.GetList()
 	if err != nil {
@@ -30,11 +32,6 @@ func init() {
 		return
 	}
 
-	if rows == nil {
-		return
-	}
-
-	// 遍历数据
 	for rows.Next() {
 		var name string
 		var id string
@@ -71,11 +68,11 @@ func handleChannel() {
 }
 
 func addNameAndId(nameAndIdObj *playerName.NameAndId) {
-	playerNameList[nameAndIdObj.Name()] = nameAndIdObj
+	playerNameList[nameAndIdObj.Name] = nameAndIdObj
 }
 
 func removeNameAndId(nameAndIdObj *playerName.NameAndId) {
-	delete(playerNameList, nameAndIdObj.Name())
+	delete(playerNameList, nameAndIdObj.Name)
 }
 
 // 注册玩家名称和Id的映射
@@ -93,12 +90,8 @@ func UnRegisterNameAndId(nameAndId *playerName.NameAndId) {
 // 根据玩家名称获得Id
 func GetIdByName(name string) (string, bool) {
 	if nameAndIdObj, ok := playerNameList[name]; ok {
-		return nameAndIdObj.Id(), true
+		return nameAndIdObj.Id, true
 	}
 
 	return "", false
-}
-
-func GetPlayerNameList() map[string]*playerName.NameAndId {
-	return playerNameList
 }

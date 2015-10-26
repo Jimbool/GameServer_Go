@@ -21,22 +21,24 @@ import (
 func GetPlayerById(clientObj *rpc.Client, id string, partnerId, serverId int) (*player.Player, bool) {
 	rows, err := playerDAL.GetList(id, partnerId, serverId)
 	if err != nil {
-		fmt.Println("here0")
 		logUtil.Log(fmt.Sprintf("根据%s获取玩家信息失败", id), logUtil.Error, true)
 		return nil, false
 	}
-	fmt.Println("here0.5")
+
+	// 在sql.Rows.Next()方法中不能够提前return
+	var playerObj *player.Player
 	for rows.Next() {
 		var name string
 		err := rows.Scan(&id, &name, &partnerId, &serverId)
 		if err != nil {
 			logUtil.Log(fmt.Sprintf("Scan%s玩家信息失败,错误信息为：%s", id, err), logUtil.Error, true)
+			continue
 		}
-		fmt.Println("here1")
-		return player.New(id, name, partnerId, serverId, clientObj.Id()), true
+
+		playerObj = player.New(id, name, partnerId, serverId, clientObj.Id())
 	}
-	fmt.Println("here2")
-	return nil, false
+
+	return playerObj, playerObj != nil
 }
 
 // 根据玩家名称获得玩家对象
@@ -59,7 +61,7 @@ func GetPlayerByName(clientObj *rpc.Client, name string, partnerId, serverId int
 // playerObj：玩家对象
 // responseObj：结果对象
 func PushDataToPlayer(playerObj *player.Player, responseObj rpc.ResponseObject) {
-	if clientObj, ok := rpc.GetClientByPlayerId(playerObj.Id()); ok {
+	if clientObj, ok := rpc.GetClientByPlayerId(playerObj.Id); ok {
 		PushDataToClient(clientObj, responseObj)
 	}
 }
@@ -73,10 +75,10 @@ func PushDataToClient(clientObj *rpc.Client, responseObj rpc.ResponseObject) {
 
 func assembleToClient(playerObj *player.Player) map[string]interface{} {
 	data := make(map[string]interface{})
-	data[gameProperty.Id] = playerObj.Id()
-	data[gameProperty.Name] = playerObj.Name()
-	data[gameProperty.PartnerId] = playerObj.PartnerId()
-	data[gameProperty.ServerId] = playerObj.ServerId()
+	data[gameProperty.Id] = playerObj.Id
+	data[gameProperty.Name] = playerObj.Name
+	data[gameProperty.PartnerId] = playerObj.PartnerId
+	data[gameProperty.ServerId] = playerObj.ServerId
 
 	return data
 }

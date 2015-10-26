@@ -4,7 +4,6 @@
 package serverGroupSettingBLL
 
 import (
-	"errors"
 	"github.com/Jordanzuo/GameServer_Go/src/config"
 	"github.com/Jordanzuo/GameServer_Go/src/dal/worldDAL/dynamicDAL/serverGroupSettingDAL"
 	"github.com/Jordanzuo/GameServer_Go/src/initError"
@@ -19,11 +18,6 @@ func init() {
 	rows, err := serverGroupSettingDAL.GetList(config.ServerGroupId)
 	if err != nil {
 		initError.RegisterInitError(err)
-		return
-	}
-
-	if rows == nil {
-		initError.RegisterInitError(errors.New("未找到ServerGroupSetting的配置项"))
 		return
 	}
 

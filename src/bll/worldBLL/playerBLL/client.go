@@ -30,8 +30,6 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, 
 	name, sign string) rpc.ResponseObject {
 	responseObj := rpc.GetInitResponseObj()
 
-	fmt.Println("param:", partnerId, serverId, gameVersionId, resourceVersionId, name)
-
 	// 判断合作商、服务器是否存在
 	if manageUtil.IfServerExists(partnerId, serverId) == false {
 		return rpc.GetResultStatusResponseObj(responseObj, rpc.ServerNotExists)
@@ -59,8 +57,7 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, 
 	var ok bool
 	if playerObj, ok = GetPlayerByName(clientObj, name, partnerId, serverId); ok {
 		// 判断是否重复登陆
-		if oldClientObj, ok := rpc.GetClientByPlayerId(playerObj.Id()); ok {
-			fmt.Println("找到客户端")
+		if oldClientObj, ok := rpc.GetClientByPlayerId(playerObj.Id); ok {
 			// 如果不是同一个客户端，则先发送重复登陆的信息，然后玩家登出，客户端退出
 			if clientObj != oldClientObj {
 				// 先发送被路易下去的信息
@@ -71,7 +68,7 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, 
 		}
 
 		// 更新玩家对象的ClientId
-		playerObj.SetClientId(clientObj.Id())
+		playerObj.ClientId = clientObj.Id()
 	} else {
 		// todo 创建新玩家
 		// playerObj = player.New(stringUtil.GetNewGUID(), name, partnerId, serverId, clientObj.Id())
@@ -82,7 +79,7 @@ func (playerBLL *PlayerBLL) C_Login(clientObj *rpc.Client, partnerId, serverId, 
 	}
 
 	// 玩家上线
-	clientObj.PlayerLogin(playerObj.Id(), partnerId, serverId, gameVersionId, resourceVersionId)
+	clientObj.PlayerLogin(playerObj.Id, partnerId, serverId, gameVersionId, resourceVersionId)
 
 	// 组装返回值
 	responseObj.Data = assembleToClient(playerObj)
@@ -97,7 +94,7 @@ func (playerBLL *PlayerBLL) C_AlterName(playerObj *player.Player, newName string
 	responseObj := rpc.GetInitResponseObj()
 
 	// 判断名字是否未改变
-	if playerObj.Name() == newName {
+	if playerObj.Name == newName {
 		return responseObj
 	}
 
@@ -107,20 +104,20 @@ func (playerBLL *PlayerBLL) C_AlterName(playerObj *player.Player, newName string
 	}
 
 	// 获取旧名称
-	oldName := playerObj.Name()
+	oldName := playerObj.Name
 
 	// 修改名称
-	playerObj.SetName(newName)
+	playerObj.Name = newName
 
 	// 移除旧名称，注册新名称
-	playerNameBLL.UnRegisterNameAndId(playerName.New(oldName, playerObj.Id()))
-	playerNameBLL.RegisterNameAndId(playerName.New(playerObj.Name(), playerObj.Id()))
+	playerNameBLL.UnRegisterNameAndId(playerName.New(oldName, playerObj.Id))
+	playerNameBLL.RegisterNameAndId(playerName.New(playerObj.Name, playerObj.Id))
 
 	// 推送信息begin
 
 	// 组装data
 	playerInfo := make(map[string]interface{})
-	playerInfo[gameProperty.Name] = playerObj.Name()
+	playerInfo[gameProperty.Name] = playerObj.Name
 
 	data := make(map[string]interface{})
 	data[gameProperty.PlayerInfo] = playerInfo

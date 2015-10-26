@@ -3,9 +3,11 @@ package rpc
 import (
 	"fmt"
 	"github.com/Jordanzuo/goutil/logUtil"
+	"github.com/Jordanzuo/goutil/timeUtil"
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 func handleClientContent(clientObj *Client) {
@@ -17,9 +19,10 @@ func handleClientContent(clientObj *Client) {
 
 		// 处理数据，如果长度为0则表示心跳包
 		if len(content) == 0 {
+			fmt.Printf("%s:收到心跳包\n", timeUtil.Format(time.Now(), "yyyy-MM-dd HH:mm:ss"))
 			continue
 		} else {
-			handleRequest(clientObj, id, content)
+			go handleRequest(clientObj, id, content)
 		}
 	}
 }

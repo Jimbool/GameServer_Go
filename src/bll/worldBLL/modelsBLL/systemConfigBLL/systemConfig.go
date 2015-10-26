@@ -134,11 +134,6 @@ func init() {
 		return
 	}
 
-	if rows == nil {
-		initError.RegisterInitError(errors.New("未找到SystemConfig的配置项"))
-		return
-	}
-
 	for rows.Next() {
 		var configKey string
 		var configValue string
