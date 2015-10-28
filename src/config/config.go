@@ -21,6 +21,9 @@ var (
 	// 游戏数据库连接字符串
 	GameDBConnection string
 
+	// Redis连接字符串
+	RedisConnection string
+
 	// 服务器组Id
 	ServerGroupId int
 )
@@ -65,6 +68,19 @@ func init() {
 
 	// 设置GameDBConnection
 	GameDBConnection = gameDBConnection_string
+
+	// 解析RedisConnection
+	redisConnection, ok := config["RedisConnection"]
+	if !ok {
+		panic(errors.New("不存在名为RedisConnection的配置或配置为空"))
+	}
+	redisConnection_string, ok := redisConnection.(string)
+	if !ok {
+		panic(errors.New("RedisConnection必须为字符串类型"))
+	}
+
+	// 设置GameDBConnection
+	RedisConnection = redisConnection_string
 
 	// 解析ServerGroupId
 	serverGroupId, ok := config["ServerGroupId"]

@@ -9,7 +9,6 @@ import (
 	"github.com/Jordanzuo/GameServer_Go/src/model/world/player"
 	"github.com/Jordanzuo/GameServer_Go/src/rpc"
 	"github.com/Jordanzuo/goutil/securityUtil"
-	_ "github.com/Jordanzuo/goutil/stringUtil"
 )
 
 func init() {
@@ -111,7 +110,7 @@ func (playerBLL *PlayerBLL) C_AlterName(playerObj *player.Player, newName string
 
 	// 移除旧名称，注册新名称
 	playerNameBLL.UnRegisterNameAndId(playerName.New(oldName, playerObj.Id))
-	playerNameBLL.RegisterNameAndId(playerName.New(playerObj.Name, playerObj.Id))
+	playerNameBLL.RegisterNameAndId(playerName.New(newName, playerObj.Id))
 
 	// 推送信息begin
 

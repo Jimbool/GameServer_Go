@@ -1,13 +1,13 @@
 package playerBLL
 
 import (
-	"fmt"
+	_ "fmt"
 	"github.com/Jordanzuo/GameServer_Go/src/bll/worldBLL/globalBLL/playerNameBLL"
 	"github.com/Jordanzuo/GameServer_Go/src/dal/worldDAL/playerDAL"
 	"github.com/Jordanzuo/GameServer_Go/src/model/text/gameProperty"
 	"github.com/Jordanzuo/GameServer_Go/src/model/world/player"
 	"github.com/Jordanzuo/GameServer_Go/src/rpc"
-	"github.com/Jordanzuo/goutil/logUtil"
+	_ "github.com/Jordanzuo/goutil/logUtil"
 )
 
 // 根据玩家Id获得玩家对象
@@ -19,26 +19,12 @@ import (
 // 玩家对象
 // 是否存在玩家对象
 func GetPlayerById(clientObj *rpc.Client, id string, partnerId, serverId int) (*player.Player, bool) {
-	rows, err := playerDAL.GetList(id, partnerId, serverId)
-	if err != nil {
-		logUtil.Log(fmt.Sprintf("根据%s获取玩家信息失败", id), logUtil.Error, true)
-		return nil, false
+	playerObj, exists := playerDAL.GetPlayerObj(id, partnerId, serverId)
+	if exists {
+		playerObj.ClientId = clientObj.Id()
 	}
 
-	// 在sql.Rows.Next()方法中不能够提前return
-	var playerObj *player.Player
-	for rows.Next() {
-		var name string
-		err := rows.Scan(&id, &name, &partnerId, &serverId)
-		if err != nil {
-			logUtil.Log(fmt.Sprintf("Scan%s玩家信息失败,错误信息为：%s", id, err), logUtil.Error, true)
-			continue
-		}
-
-		playerObj = player.New(id, name, partnerId, serverId, clientObj.Id())
-	}
-
-	return playerObj, playerObj != nil
+	return playerObj, exists
 }
 
 // 根据玩家名称获得玩家对象
@@ -61,8 +47,10 @@ func GetPlayerByName(clientObj *rpc.Client, name string, partnerId, serverId int
 // playerObj：玩家对象
 // responseObj：结果对象
 func PushDataToPlayer(playerObj *player.Player, responseObj rpc.ResponseObject) {
-	if clientObj, ok := rpc.GetClientByPlayerId(playerObj.Id); ok {
-		PushDataToClient(clientObj, responseObj)
+	if playerObj.ClientId > 0 {
+		if clientObj, ok := rpc.GetClientById(playerObj.ClientId); ok {
+			PushDataToClient(clientObj, responseObj)
+		}
 	}
 }
 

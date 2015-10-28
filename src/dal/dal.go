@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Jordanzuo/GameServer_Go/src/config"
+	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -58,4 +60,40 @@ func openConnections(connectionString string) *sql.DB {
 	db.Ping()
 
 	return db
+}
+
+// 获取Redis的连接
+// 返回值
+// Redis连接对象
+func GetRedisConn() redis.Conn {
+	conn, err := redis.DialTimeout("tcp", config.RedisConnection, 5*time.Second, 1*time.Second, 1*time.Second)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("连接redis服务器失败，错误信息为：%s\n", err)))
+	}
+
+	return conn
+}
+
+// 处理Redis错误
+// err：错误对象
+func HandleRedisError(err error) {
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("执行Redis命令失败，错误信息为：%s", err)))
+	}
+}
+
+// 处理Mysql错误
+// err：错误对象
+func HandleMysqlError(err error) {
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("执行Mysql命令失败，错误信息为：%s", err)))
+	}
+}
+
+// 处理其它错误
+// err：错误对象
+func HandleOtherError(err error) {
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("其他错误，错误信息为：%s", err)))
+	}
 }
