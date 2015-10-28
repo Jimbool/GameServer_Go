@@ -9,18 +9,19 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var (
 	gameModelDB *sql.DB
 	gameDB      *sql.DB
+	redisPool   *redis.Pool
 )
 
 // 初始化数据库连接相关的配置
 func init() {
 	gameModelDB = openConnections(config.GameModelDBConnection)
 	gameDB = openConnections(config.GameDBConnection)
+	redisPool = newPool(config.RedisConnection)
 }
 
 // 获取连接游戏数据库的DB对象
@@ -31,6 +32,13 @@ func GameDB() *sql.DB {
 // 获取连接游戏模型数据库的DB对象
 func GameModelDB() *sql.DB {
 	return gameModelDB
+}
+
+// 获取Redis的连接
+// 返回值
+// Redis连接对象
+func GetRedisConn() redis.Conn {
+	return redisPool.Get()
 }
 
 func openConnections(connectionString string) *sql.DB {
@@ -62,16 +70,32 @@ func openConnections(connectionString string) *sql.DB {
 	return db
 }
 
-// 获取Redis的连接
-// 返回值
-// Redis连接对象
-func GetRedisConn() redis.Conn {
-	conn, err := redis.DialTimeout("tcp", config.RedisConnection, 5*time.Second, 1*time.Second, 1*time.Second)
+func newPool(connectionString string) *redis.Pool {
+	connectionSlice := strings.Split(connectionString, ";")
+
+	// 获取连接池相关
+	maxActive_string := strings.Replace(connectionSlice[1], "MaxActive=", "", 1)
+	maxActive, err := strconv.Atoi(maxActive_string)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf("连接redis服务器失败，错误信息为：%s\n", err)))
+		panic(errors.New(fmt.Sprintf("MaxActive必须为int型,连接字符串为：%s", connectionString)))
 	}
 
-	return conn
+	maxIdle_string := strings.Replace(connectionSlice[2], "MaxIdle=", "", 1)
+	maxIdle, err := strconv.Atoi(maxIdle_string)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("MaxIdle必须为int型,连接字符串为：%s", connectionString)))
+	}
+
+	pool := redis.NewPool(func() (redis.Conn, error) {
+		c, err := redis.Dial("tcp", connectionSlice[0])
+		if err != nil {
+			panic(err.Error())
+		}
+		return c, err
+	}, maxIdle)
+	pool.MaxActive = maxActive
+
+	return pool
 }
 
 // 处理Redis错误
