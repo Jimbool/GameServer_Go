@@ -24,6 +24,9 @@ var (
 	// Redis连接字符串
 	RedisConnection string
 
+	// WebServer监听地址
+	WebServerAddress string
+
 	// 服务器组Id
 	ServerGroupId int
 )
@@ -81,6 +84,19 @@ func init() {
 
 	// 设置GameDBConnection
 	RedisConnection = redisConnection_string
+
+	// 解析WebServerAddress
+	webServerAddress, ok := config["WebServerAddress"]
+	if !ok {
+		panic(errors.New("不存在名为WebServerAddress的配置或配置为空"))
+	}
+	webServerAddress_string, ok := webServerAddress.(string)
+	if !ok {
+		panic(errors.New("WebServerAddress必须为字符创类型"))
+	}
+
+	// 设置WebServerAddress
+	WebServerAddress = webServerAddress_string
 
 	// 解析ServerGroupId
 	serverGroupId, ok := config["ServerGroupId"]

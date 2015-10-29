@@ -9,6 +9,7 @@ import (
 	"github.com/Jordanzuo/GameServer_Go/src/bll/worldBLL/playerBLL"
 	"github.com/Jordanzuo/GameServer_Go/src/initError"
 	"github.com/Jordanzuo/GameServer_Go/src/rpc"
+	"github.com/Jordanzuo/GameServer_Go/src/web"
 	"github.com/Jordanzuo/goutil/logUtil"
 	"os"
 	"os/exec"
@@ -45,7 +46,7 @@ func init() {
 	logUtil.SetLogPath(filepath.Join(logPath, LOG_PATH_SUFFIX))
 
 	// 设置WaitGroup需要等待的数量
-	wg.Add(1)
+	wg.Add(2)
 }
 
 // 处理系统信号
@@ -55,9 +56,10 @@ func signalProc() {
 
 	for {
 		// 准备接收信息
-		<-sigs
+		sig := <-sigs
 
 		// 一旦收到信号，则表明管理员希望退出程序，则先保存信息，然后退出
+		fmt.Println("收到管理员的退出信号：", sig)
 
 		// todo：执行一些收尾的工作
 
@@ -93,7 +95,8 @@ func main() {
 	// 启动Socket服务器
 	go rpc.StartServer(&wg)
 
-	// todo：启动Web服务器
+	// 启动Web服务器
+	go web.StartServer(&wg)
 
 	// 阻塞等待，以免main线程退出
 	wg.Wait()

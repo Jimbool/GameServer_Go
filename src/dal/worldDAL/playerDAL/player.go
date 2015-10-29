@@ -17,7 +17,7 @@ func getPlayerFromRedis(id string, partnerId, serverId int) (*player.Player, boo
 	var playerObj *player.Player
 
 	// 获取redis连接对象
-	conn := dal.GetRedisConn()
+	conn := dal.RedisConn()
 	defer conn.Close()
 
 	// 执行GET命令
@@ -94,7 +94,7 @@ func GetPlayerObj(id string, partnerId, serverId int) (*player.Player, bool) {
 // 保存玩家到Redis中
 func SavePlayerToRedis(playerObj *player.Player) {
 	// 获取redis连接对象
-	conn := dal.GetRedisConn()
+	conn := dal.RedisConn()
 	defer conn.Close()
 
 	// 讲玩家对象序列化

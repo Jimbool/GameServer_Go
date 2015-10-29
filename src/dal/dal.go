@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -19,9 +20,9 @@ var (
 
 // 初始化数据库连接相关的配置
 func init() {
-	gameModelDB = openConnections(config.GameModelDBConnection)
-	gameDB = openConnections(config.GameDBConnection)
-	redisPool = newPool(config.RedisConnection)
+	gameModelDB = openMysqlConnection(config.GameModelDBConnection)
+	gameDB = openMysqlConnection(config.GameDBConnection)
+	redisPool = newRedisPool(config.RedisConnection)
 }
 
 // 获取连接游戏数据库的DB对象
@@ -37,11 +38,11 @@ func GameModelDB() *sql.DB {
 // 获取Redis的连接
 // 返回值
 // Redis连接对象
-func GetRedisConn() redis.Conn {
+func RedisConn() redis.Conn {
 	return redisPool.Get()
 }
 
-func openConnections(connectionString string) *sql.DB {
+func openMysqlConnection(connectionString string) *sql.DB {
 	connectionSlice := strings.Split(connectionString, ";")
 
 	// 建立数据库连接
@@ -70,7 +71,7 @@ func openConnections(connectionString string) *sql.DB {
 	return db
 }
 
-func newPool(connectionString string) *redis.Pool {
+func newRedisPool(connectionString string) *redis.Pool {
 	connectionSlice := strings.Split(connectionString, ";")
 
 	// 获取连接池相关
@@ -86,16 +87,39 @@ func newPool(connectionString string) *redis.Pool {
 		panic(errors.New(fmt.Sprintf("MaxIdle必须为int型,连接字符串为：%s", connectionString)))
 	}
 
-	pool := redis.NewPool(func() (redis.Conn, error) {
-		c, err := redis.Dial("tcp", connectionSlice[0])
-		if err != nil {
-			panic(err.Error())
-		}
-		return c, err
-	}, maxIdle)
-	pool.MaxActive = maxActive
+	idleTimeout_string := strings.Replace(connectionSlice[3], "IdleTimeout=", "", 1)
+	idleTimeout_int, err := strconv.Atoi(idleTimeout_string)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("IdleTimeout必须为int型,连接字符串为：%s", connectionString)))
+	}
+	idleTimeout := time.Duration(idleTimeout_int) * time.Second
 
-	return pool
+	password := strings.Replace(connectionSlice[4], "Password=", "", 1)
+
+	return &redis.Pool{
+		MaxIdle:     maxIdle,     // 最大的空闲连接数，表示即使没有redis连接时依然可以保持N个空闲的连接，而不被清除，随时处于待命状态
+		MaxActive:   maxActive,   // 最大的激活连接数，表示同时最多有N个连接
+		IdleTimeout: idleTimeout, //最大的空闲连接等待时间，超过此时间后，空闲连接将被关闭
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", connectionSlice[0])
+			if err != nil {
+				return nil, err
+			}
+
+			if password != "" {
+				if _, err := c.Do("AUTH", password); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+
+			return c, err
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
 }
 
 // 处理Redis错误
