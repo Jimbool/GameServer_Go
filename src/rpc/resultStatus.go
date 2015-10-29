@@ -38,6 +38,15 @@ const (
 	// 未找到玩家对象
 	PlayerNotFound ResultStatus = -7
 
+	// 服务器维护中
+	ServerMaintain ResultStatus = -8
+
+	// 有新版本
+	NewGameVersion ResultStatus = -9
+
+	// 有新的资源版本
+	NewResourceVersion ResultStatus = -10
+
 	// 重复登陆
 	LoginAgain ResultStatus = -1101
 
@@ -49,12 +58,6 @@ const (
 
 	// 服务器不存在
 	ServerNotExists ResultStatus = -1104
-
-	// 有新版本
-	NewGameVersion ResultStatus = -1105
-
-	// 有新的资源版本
-	NewResourceVersion ResultStatus = -1106
 )
 
 // 定义所有的响应结果的状态值所对应的字符串描述信息，如果要增加状态枚举，则此处也要相应地增加
@@ -67,10 +70,11 @@ var status map[ResultStatus]string = map[ResultStatus]string{
 	-5:    "DataError",
 	-6:    "PlayerNotLogin",
 	-7:    "PlayerNotFound",
+	-8:    "ServerMaintain",
+	-9:    "NewGameVersion",
+	-10:   "NewResourceVersion",
 	-1101: "LoginAgain",
 	-1102: "SignError",
 	-1103: "NameExists",
 	-1104: "ServerNotExists",
-	-1105: "NewGameVersion",
-	-1106: "NewResourceVersion",
 }

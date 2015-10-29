@@ -35,6 +35,11 @@ func init() {
 	go handleChannel()
 }
 
+// 获取客户端列表
+func ClientList() map[int32]*Client {
+	return clientList
+}
+
 func clearExpiredClient() {
 	// 处理内部未处理的异常，以免导致主线程退出，从而导致系统崩溃
 	defer func() {

@@ -10,6 +10,15 @@ import (
 	_ "github.com/Jordanzuo/goutil/logUtil"
 )
 
+// 根据客户端获得玩家对象
+// clientObj：客户端对象
+// 返回值：
+// 玩家对象
+// 是否存在玩家对象
+func GetPlayerByClient(clientObj *rpc.Client) (*player.Player, bool) {
+	return playerDAL.GetPlayerObj(clientObj.PlayerId(), clientObj.PartnerId(), clientObj.ServerId())
+}
+
 // 根据玩家Id获得玩家对象
 // clientObj：客户端对象
 // id：玩家Id
