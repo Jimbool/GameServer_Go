@@ -84,7 +84,7 @@ var (
 	// 工会战地址
 	GuildWarUrl string
 
-	// Charge API允许访问的IP
+	// API允许访问的IP
 	AllowIps string
 
 	// 激活码验证地址
@@ -162,6 +162,7 @@ func check() {
 	var value *systemConfig.SystemConfigItem
 	var ok = false
 
+	// 解析CheckExpiredInterval
 	if value, ok = systemConfigList[systemConfigKey.CheckExpiredInterval]; !ok {
 		initError.RegisterInitError(errors.New(fmt.Sprintf("没有找到%s的配置", systemConfigKey.CheckExpiredInterval)))
 	} else {
@@ -172,6 +173,7 @@ func check() {
 		}
 	}
 
+	// 解析ClientExpiredSeconds
 	if value, ok = systemConfigList[systemConfigKey.ClientExpiredSeconds]; !ok {
 		initError.RegisterInitError(errors.New(fmt.Sprintf("没有找到%s的配置", systemConfigKey.ClientExpiredSeconds)))
 	} else {
@@ -180,5 +182,12 @@ func check() {
 		} else {
 			ClientExpiredSeconds = time.Duration(clientExpiredSeconds_int)
 		}
+	}
+
+	// 解析AllowIps
+	if value, ok = systemConfigList[systemConfigKey.AllowIps]; !ok {
+		initError.RegisterInitError(errors.New(fmt.Sprintf("没有找到%s的配置", systemConfigKey.AllowIps)))
+	} else {
+		AllowIps = value.ConfigValue()
 	}
 }

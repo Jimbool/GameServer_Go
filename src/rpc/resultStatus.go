@@ -47,6 +47,9 @@ const (
 	// 有新的资源版本
 	NewResourceVersion ResultStatus = -10
 
+	// ip不允许
+	IpNotAllowed ResultStatus = -11
+
 	// 重复登陆
 	LoginAgain ResultStatus = -1101
 
@@ -73,6 +76,7 @@ var status map[ResultStatus]string = map[ResultStatus]string{
 	-8:    "ServerMaintain",
 	-9:    "NewGameVersion",
 	-10:   "NewResourceVersion",
+	-11:   "IpNotAllowed",
 	-1101: "LoginAgain",
 	-1102: "SignError",
 	-1103: "NameExists",

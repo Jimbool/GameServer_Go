@@ -48,11 +48,12 @@ func ResponseResult(clientObj *Client, requestObj *RequestObject, responseObj in
 	b, err := json.Marshal(responseObj)
 	if err != nil {
 		logUtil.Log(fmt.Sprintf("序列化输出结果%v出错", responseObj), logUtil.Error, true)
+		return
+	}
+
+	if requestObj == nil {
+		clientObj.SendByteMessage(0, b)
 	} else {
-		if requestObj == nil {
-			clientObj.SendByteMessage(0, b)
-		} else {
-			clientObj.SendByteMessage(requestObj.Id, b)
-		}
+		clientObj.SendByteMessage(requestObj.Id, b)
 	}
 }
